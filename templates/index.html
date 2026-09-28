@@ -1,0 +1,2917 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Frame Designer — 枠設定ツール</title>
+        <style>
+            :root {
+                --page: #f4f6f9;
+                --paper: #fff;
+                --ink: #15212e;
+                --ink-2: #3d4c5c;
+                --ink-soft: #7a8794;
+                --line: #e7ebf1;
+                --line-2: #eef2f6;
+                --accent: #15212e;
+                --focus: #c9d6ff;
+                --lidar: #e5484d;
+                --robot: #3b6ef5;
+                --amber: #e08a1e;
+                --ok: #12a150;
+                --pose: #7c3aed;
+                --route: #0d9488;
+                --shadow: 0 1px 2px rgba(21, 33, 46, 0.05), 0 8px 24px rgba(21, 33, 46, 0.06);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+            }
+            body {
+                font-family:
+                    "Inter",
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    "Hiragino Sans",
+                    "Noto Sans JP",
+                    sans-serif;
+                color: var(--ink);
+                background: var(--page);
+                display: flex;
+                flex-direction: column;
+                -webkit-font-smoothing: antialiased;
+                overflow: hidden;
+            }
+            .mono {
+                font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            }
+
+            header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0 16px;
+                height: 54px;
+                background: var(--paper);
+                border-bottom: 1px solid var(--line);
+                flex: 0 0 auto;
+                z-index: 20;
+            }
+            .brand {
+                display: flex;
+                flex-direction: column;
+                line-height: 1.15;
+                margin-right: 6px;
+            }
+            .brand .t {
+                font-weight: 650;
+                font-size: 14.5px;
+                letter-spacing: -0.01em;
+            }
+            .brand .s {
+                font-size: 9px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: var(--ink-soft);
+            }
+            .brand .mark {
+                display: inline-block;
+                width: 13px;
+                height: 13px;
+                border: 2px solid var(--ink);
+                border-radius: 3px;
+                margin-right: 7px;
+                position: relative;
+                vertical-align: -2px;
+            }
+            .brand .mark::after {
+                content: "";
+                position: absolute;
+                inset: 2px;
+                border: 1px solid var(--robot);
+                border-radius: 1px;
+            }
+            .spacer {
+                flex: 1;
+            }
+            .vline {
+                width: 1px;
+                height: 22px;
+                background: var(--line);
+            }
+            .reschip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 10px;
+                border: 1px solid var(--line);
+                border-radius: 9px;
+                font-size: 11.5px;
+                color: var(--ink-2);
+                white-space: nowrap;
+            }
+            .reschip input {
+                width: 56px;
+                border: 1px solid var(--line);
+                border-radius: 6px;
+                padding: 3px 5px;
+                font-size: 12px;
+                font-family: ui-monospace, monospace;
+                text-align: right;
+                outline: none;
+            }
+            .reschip input:focus {
+                border-color: var(--robot);
+                box-shadow: 0 0 0 2px var(--focus);
+            }
+            button {
+                font-family: inherit;
+            }
+            .btn {
+                border: 1px solid var(--line);
+                background: var(--paper);
+                color: var(--ink);
+                padding: 7px 12px;
+                border-radius: 9px;
+                font-size: 12.5px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: 0.14s;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                white-space: nowrap;
+            }
+            .btn:hover:not(:disabled) {
+                border-color: #cfd7e2;
+                background: #fbfcfe;
+            }
+            .btn.primary {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #fff;
+            }
+            .btn.primary:hover:not(:disabled) {
+                background: #22303f;
+            }
+            .btn.sm {
+                padding: 6px 9px;
+                font-size: 11.5px;
+                border-radius: 8px;
+            }
+            .btn.ico {
+                padding: 7px 9px;
+            }
+            .btn.danger:hover:not(:disabled) {
+                border-color: #f3b3b5;
+                color: #c93a3f;
+                background: #fff7f7;
+            }
+            .btn:disabled {
+                opacity: 0.35;
+                cursor: not-allowed;
+            }
+            label.file {
+                cursor: pointer;
+            }
+            input[type="file"] {
+                display: none;
+            }
+
+            .work {
+                flex: 1;
+                display: flex;
+                min-height: 0;
+            }
+            .stage {
+                flex: 1;
+                position: relative;
+                overflow: hidden;
+                min-width: 0;
+                background: var(--paper);
+            }
+            canvas {
+                display: block;
+                position: absolute;
+                inset: 0;
+            }
+
+            .empty {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                text-align: center;
+                pointer-events: none;
+                color: var(--ink-soft);
+            }
+            .empty .ic {
+                width: 50px;
+                height: 50px;
+                border: 2px dashed #c7d0dc;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #aebaca;
+            }
+            .empty .big {
+                font-size: 15px;
+                color: var(--ink-2);
+                font-weight: 550;
+            }
+            .empty .small {
+                font-size: 12.5px;
+                max-width: 380px;
+                line-height: 1.65;
+            }
+
+            .chip {
+                position: absolute;
+                background: rgba(255, 255, 255, 0.93);
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                box-shadow: var(--shadow);
+                backdrop-filter: blur(6px);
+            }
+            .readout {
+                left: 14px;
+                bottom: 14px;
+                padding: 8px 12px;
+                font-size: 12px;
+                color: var(--ink-2);
+                display: none;
+            }
+            .readout b {
+                color: var(--ink);
+                font-weight: 600;
+            }
+            .posechip {
+                right: 14px;
+                top: 14px;
+                padding: 7px 12px;
+                font-size: 11.5px;
+                color: var(--ink-2);
+                display: none;
+            }
+            .posechip b {
+                color: var(--pose);
+                font-weight: 700;
+            }
+            .zoomchip {
+                right: 14px;
+                bottom: 14px;
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                padding: 4px;
+            }
+            .zoomchip button {
+                width: 29px;
+                height: 29px;
+                border: none;
+                background: transparent;
+                border-radius: 7px;
+                font-size: 16px;
+                color: var(--ink-2);
+                cursor: pointer;
+            }
+            .zoomchip button:hover {
+                background: var(--line-2);
+            }
+            .zoomchip .z {
+                font-size: 11.5px;
+                color: var(--ink-soft);
+                min-width: 42px;
+                text-align: center;
+            }
+            .legend {
+                left: 14px;
+                top: 14px;
+                padding: 7px 11px;
+                font-size: 11.5px;
+                display: flex;
+                gap: 12px;
+                align-items: center;
+            }
+            .legend .it {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--ink-2);
+            }
+            .legend .sw {
+                width: 10px;
+                height: 10px;
+                border-radius: 3px;
+            }
+            .legend b {
+                color: var(--ink);
+                font-weight: 650;
+            }
+            .modechip {
+                left: 50%;
+                transform: translateX(-50%);
+                top: 14px;
+                padding: 7px 14px;
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--amber);
+                display: none;
+                align-items: center;
+                gap: 7px;
+            }
+            .modechip .pulse {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: var(--amber);
+                animation: pulse 1s infinite;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.3;
+                }
+            }
+            .loading {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+                pointer-events: none;
+                z-index: 5;
+            }
+            .loading .spinner {
+                width: 44px;
+                height: 44px;
+                border: 4px solid var(--line);
+                border-top-color: var(--robot);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+            .loading .ltext {
+                font-size: 13px;
+                color: var(--ink-2);
+                font-weight: 550;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* right rail */
+            aside {
+                flex: 0 0 350px;
+                background: var(--page);
+                border-left: 1px solid var(--line);
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+            .tabbar {
+                display: flex;
+                gap: 4px;
+                padding: 10px 12px 0;
+                flex: 0 0 auto;
+            }
+            .tabbar button {
+                flex: 1;
+                padding: 9px 4px;
+                font-size: 12.5px;
+                border: 1px solid var(--line);
+                border-bottom: none;
+                background: var(--page);
+                border-radius: 10px 10px 0 0;
+                cursor: pointer;
+                color: var(--ink-soft);
+                font-weight: 550;
+                position: relative;
+                top: 1px;
+            }
+            .tabbar button.on {
+                background: var(--paper);
+                color: var(--ink);
+                border-color: var(--line);
+            }
+            .tabbar button .cnt {
+                font-family: ui-monospace, monospace;
+                font-size: 10.5px;
+                opacity: 0.75;
+                margin-left: 3px;
+            }
+            .panes {
+                flex: 1;
+                overflow-y: auto;
+                background: var(--paper);
+                border-top: 1px solid var(--line);
+                padding: 4px 0 60px;
+            }
+            .pane {
+                display: none;
+            }
+            .pane.on {
+                display: block;
+            }
+
+            .sect {
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--line-2);
+            }
+            .sect:last-child {
+                border-bottom: none;
+            }
+            .sect > .sh {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                margin-bottom: 11px;
+            }
+            .icchip {
+                width: 24px;
+                height: 24px;
+                border-radius: 7px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex: 0 0 auto;
+                background: #eef1f6;
+                color: var(--ink-2);
+            }
+            .icchip.l {
+                background: rgba(229, 72, 77, 0.12);
+                color: var(--lidar);
+            }
+            .icchip.r {
+                background: rgba(59, 110, 245, 0.12);
+                color: var(--robot);
+            }
+            .sh .tt {
+                display: flex;
+                flex-direction: column;
+                line-height: 1.2;
+                min-width: 0;
+            }
+            .sh h2 {
+                font-size: 13px;
+                margin: 0;
+                font-weight: 650;
+                letter-spacing: -0.01em;
+            }
+            .sh .sub {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+            }
+            .sh .tag {
+                margin-left: auto;
+                font-size: 11px;
+                color: var(--ink-2);
+                background: var(--line-2);
+                padding: 3px 9px;
+                border-radius: 20px;
+                font-family: ui-monospace, monospace;
+                flex: 0 0 auto;
+            }
+
+            .seg {
+                display: flex;
+                gap: 4px;
+                background: var(--line-2);
+                padding: 4px;
+                border-radius: 10px;
+                margin-bottom: 11px;
+            }
+            .seg button {
+                flex: 1;
+                padding: 7px 3px;
+                font-size: 11.5px;
+                border: none;
+                background: transparent;
+                border-radius: 7px;
+                cursor: pointer;
+                color: var(--ink-2);
+                font-weight: 500;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+            }
+            .seg button.on {
+                background: var(--paper);
+                color: var(--ink);
+                box-shadow: 0 1px 3px rgba(21, 33, 46, 0.12);
+                font-weight: 650;
+            }
+            .seg .ar {
+                font-size: 12px;
+                line-height: 1;
+            }
+
+            .grid2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 9px;
+            }
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                margin-top: 10px;
+            }
+            .field .fl {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                font-weight: 650;
+                display: flex;
+                justify-content: space-between;
+            }
+            .field .fl .un {
+                color: #aab4c0;
+                font-weight: 500;
+            }
+            .stepper {
+                display: flex;
+                align-items: center;
+                border: 1px solid var(--line);
+                border-radius: 9px;
+                overflow: hidden;
+                background: #fff;
+            }
+            .stepper:focus-within {
+                border-color: var(--robot);
+                box-shadow: 0 0 0 3px var(--focus);
+            }
+            .stepper button {
+                width: 28px;
+                height: 32px;
+                border: none;
+                background: #fafbfd;
+                color: var(--ink-soft);
+                font-size: 14px;
+                cursor: pointer;
+            }
+            .stepper button:hover {
+                background: var(--line-2);
+                color: var(--ink);
+            }
+            .stepper input {
+                flex: 1;
+                width: 100%;
+                min-width: 0;
+                text-align: center;
+                border: none;
+                outline: none;
+                font-family: ui-monospace, monospace;
+                font-size: 13px;
+                background: transparent;
+                padding: 0;
+            }
+
+            .corners {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 7px;
+                margin-top: 9px;
+            }
+            .cc {
+                border: 1px solid var(--line);
+                border-radius: 9px;
+                padding: 7px 8px;
+                background: #fcfdfe;
+            }
+            .cc .lab {
+                font-size: 9px;
+                letter-spacing: 0.08em;
+                color: var(--ink-soft);
+                text-transform: uppercase;
+                margin-bottom: 4px;
+                font-weight: 700;
+            }
+            .cc .xy {
+                display: flex;
+                gap: 4px;
+            }
+            .cc input {
+                width: 100%;
+                padding: 4px 5px;
+                border: 1px solid var(--line);
+                border-radius: 5px;
+                font-size: 11.5px;
+                font-family: ui-monospace, monospace;
+                outline: none;
+                background: #fff;
+                min-width: 0;
+            }
+            .cc input:focus {
+                border-color: var(--robot);
+                box-shadow: 0 0 0 2px var(--focus);
+            }
+
+            .arealist {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                margin-top: 2px;
+            }
+            .apill {
+                padding: 5px 9px;
+                border-radius: 7px;
+                border: 1px solid var(--line);
+                background: #fff;
+                font-size: 11.5px;
+                font-family: ui-monospace, monospace;
+                cursor: pointer;
+                transition: 0.1s;
+                color: var(--ink-2);
+            }
+            .apill:hover {
+                border-color: #cfd7e2;
+            }
+            .apill.on {
+                color: #fff;
+                font-weight: 650;
+            }
+            .apill.on.l {
+                background: var(--lidar);
+                border-color: var(--lidar);
+            }
+            .apill.on.r {
+                background: var(--robot);
+                border-color: var(--robot);
+            }
+            .routeitem {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 7px 8px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                background: #fcfdfe;
+                margin-top: 6px;
+                cursor: pointer;
+            }
+            .routeitem:hover {
+                border-color: #cfd7e2;
+            }
+            .routeitem .sw {
+                width: 10px;
+                height: 10px;
+                border-radius: 3px;
+                background: var(--route);
+                flex: 0 0 auto;
+            }
+            .routeitem .nm {
+                font-size: 12px;
+                color: var(--ink);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .rowbtns {
+                display: flex;
+                gap: 6px;
+                margin-top: 10px;
+            }
+            .rowbtns .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .note {
+                font-size: 11.5px;
+                color: var(--ink-soft);
+                line-height: 1.6;
+                margin: 10px 0 0;
+            }
+            .warn {
+                display: flex;
+                gap: 8px;
+                align-items: flex-start;
+                font-size: 11.5px;
+                line-height: 1.55;
+                padding: 9px 11px;
+                border-radius: 9px;
+                margin-top: 10px;
+            }
+            .warn.bad {
+                background: #fff8f0;
+                border: 1px solid #f5dcbe;
+                color: #8a5a12;
+            }
+            .warn.good {
+                background: #f2fbf6;
+                border: 1px solid #cdead9;
+                color: #12653a;
+            }
+
+            .selnone {
+                font-size: 12px;
+                color: var(--ink-soft);
+                text-align: center;
+                padding: 26px 10px;
+                line-height: 1.7;
+            }
+            .xf {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
+                margin-top: 8px;
+            }
+            .xf button {
+                padding: 8px 0;
+                border: 1px solid var(--line);
+                background: #fff;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 11.5px;
+                color: var(--ink-2);
+            }
+            .xf button:hover {
+                border-color: #cfd7e2;
+                color: var(--ink);
+            }
+            .xflab {
+                font-size: 10.5px;
+                color: var(--ink-soft);
+                font-weight: 650;
+                margin-top: 12px;
+            }
+            .selhead {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 11px 13px;
+                border-radius: 11px;
+                margin-bottom: 4px;
+                color: #fff;
+            }
+            .selhead.l {
+                background: var(--lidar);
+            }
+            .selhead.r {
+                background: var(--robot);
+            }
+            .selhead.multi {
+                background: var(--ink);
+            }
+            .selhead .nm {
+                font-family: ui-monospace, monospace;
+                font-weight: 700;
+                font-size: 14px;
+            }
+            .selhead .meta {
+                margin-left: auto;
+                font-size: 11px;
+                opacity: 0.9;
+                font-family: ui-monospace, monospace;
+            }
+
+            .scrim {
+                position: fixed;
+                inset: 0;
+                background: rgba(21, 33, 46, 0.28);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                pointer-events: none;
+                transition: 0.2s;
+                z-index: 40;
+            }
+            .scrim.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .drawer {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100%;
+                width: min(580px, 94vw);
+                background: var(--paper);
+                box-shadow: -16px 0 48px rgba(21, 33, 46, 0.16);
+                transform: translateX(100%);
+                transition: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+                z-index: 41;
+                display: flex;
+                flex-direction: column;
+            }
+            .drawer.show {
+                transform: none;
+            }
+            .drawer .dh {
+                display: flex;
+                align-items: center;
+                padding: 17px 20px;
+                border-bottom: 1px solid var(--line);
+            }
+            .drawer .dh b {
+                font-size: 15.5px;
+            }
+            .drawer .db {
+                padding: 18px 20px;
+                overflow: auto;
+                flex: 1;
+            }
+            .tabs {
+                display: flex;
+                gap: 6px;
+                margin-bottom: 12px;
+            }
+            .tabs button {
+                flex: 1;
+                padding: 9px;
+                font-size: 12px;
+                border: 1px solid var(--line);
+                background: #fff;
+                border-radius: 9px;
+                cursor: pointer;
+                color: var(--ink-2);
+                font-weight: 500;
+            }
+            .tabs button.on {
+                background: var(--accent);
+                color: #fff;
+                border-color: var(--accent);
+            }
+            pre.out {
+                background: #0f1a26;
+                color: #d3e3ff;
+                border-radius: 12px;
+                padding: 15px;
+                font-size: 11.5px;
+                line-height: 1.6;
+                overflow: auto;
+                margin: 0;
+                white-space: pre;
+                font-family: ui-monospace, monospace;
+                max-height: 50vh;
+            }
+            .dlrow {
+                display: flex;
+                gap: 8px;
+                margin-top: 11px;
+            }
+            .dlrow .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .toast {
+                position: fixed;
+                bottom: 22px;
+                left: 50%;
+                transform: translateX(-50%) translateY(16px);
+                background: var(--ink);
+                color: #fff;
+                padding: 10px 19px;
+                border-radius: 10px;
+                font-size: 12.5px;
+                opacity: 0;
+                pointer-events: none;
+                transition: 0.25s;
+                z-index: 60;
+            }
+            .toast.show {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="brand">
+                <div class="t"><span class="mark"></span>Frame Designer</div>
+                <div class="s">polygon area setup</div>
+            </div>
+            <div class="vline"></div>
+            <button class="btn ico" id="undoBtn" title="元に戻す (Ctrl+Z)" disabled>↶</button>
+            <button class="btn ico" id="redoBtn" title="やり直す (Ctrl+Shift+Z)" disabled>↷</button>
+            <div class="vline"></div>
+            <div class="reschip mono" title="地図の解像度（m単位のサイズ指定に使用）"><span>解像度</span><input id="mapRes" type="number" step="0.001" value="0.05" /><span>m/px</span></div>
+            <div class="spacer"></div>
+            <label class="btn file">マップ画像<input type="file" id="mapFile" accept="image/*" /></label>
+            <button class="btn" id="apiMapBtn">APIから取得</button>
+            <button class="btn" id="poseBtn">現在地を更新</button>
+            <label class="btn file">設定を読込<input type="file" id="cfgFile" accept=".yaml,.yml,.json,.txt" /></label>
+            <button class="btn" id="fitBtn">全体表示</button>
+            <button class="btn primary" id="exportBtn">書き出す</button>
+        </header>
+
+        <div class="work">
+            <div class="stage" id="stage">
+                <canvas id="cv"></canvas>
+
+                <div class="empty" id="empty">
+                    <div class="ic">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <path d="M3 9h18M9 3v18" />
+                        </svg>
+                    </div>
+                    <div class="big">マップ画像を読み込んでください</div>
+                    <div class="small">「生成」タブで基準タイルを描いて一括配置 → 「編集」タブで1枚ずつ微調整、という流れです。</div>
+                </div>
+
+                <div class="loading" id="loading" style="display: none">
+                    <div class="spinner"></div>
+                    <div class="ltext" id="loadingText">マップを取得しています…</div>
+                </div>
+
+                <div class="chip legend" id="legend" style="display: none">
+                    <div class="it"><span class="sw" style="background: var(--lidar)"></span>LiDAR <b id="legL">0</b></div>
+                    <div class="it"><span class="sw" style="background: var(--robot)"></span>ROBOT <b id="legR">0</b></div>
+                </div>
+                <div class="chip modechip" id="modechip"><span class="pulse"></span><span id="modeText"></span></div>
+                <div class="chip posechip mono" id="posechip"></div>
+                <div class="chip readout mono" id="readout"><b id="rPix">–</b></div>
+                <div class="chip zoomchip"><button id="zoomOut">−</button><span class="z mono" id="zlbl">100%</span><button id="zoomIn">+</button></div>
+            </div>
+
+            <aside>
+                <div class="tabbar">
+                    <button data-tab="gen" class="on">生成</button>
+                    <button data-tab="list">一覧<span class="cnt" id="tabCnt">0</span></button>
+                    <button data-tab="edit">編集<span class="cnt" id="tabSel"></span></button>
+                    <button data-tab="route">ルート<span class="cnt" id="tabRouteCnt">0</span></button>
+                </div>
+
+                <div class="panes">
+                    <!-- ===== GEN ===== -->
+                    <div class="pane on" id="paneGen">
+                        <div class="sect">
+                            <div class="sh">
+                                <div class="icchip r">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
+                                </div>
+                                <div class="tt">
+                                    <h2>ROBOT 基準タイル</h2>
+                                    <span class="sub">位置の起点 = ROBOT1</span>
+                                </div>
+                                <span class="tag" id="baseRSize">–</span>
+                            </div>
+                            <div class="seg" id="drawModesR">
+                                <button data-mode="topedge" class="on">上辺2点</button>
+                                <button data-mode="leftedge">左辺2点</button>
+                                <button data-mode="4pt">四隅</button>
+                            </div>
+                            <button class="btn" id="startDrawR" style="width: 100%; justify-content: center">基準タイルを描く</button>
+                            <div class="grid2" style="margin-top: 9px">
+                                <div class="field" style="margin-top: 0">
+                                    <div class="fl">幅<span class="un">m</span></div>
+                                    <div class="stepper"><input id="szBRWm" type="number" step="0.05" /></div>
+                                </div>
+                                <div class="field" style="margin-top: 0">
+                                    <div class="fl">高さ<span class="un">m</span></div>
+                                    <div class="stepper"><input id="szBRHm" type="number" step="0.05" /></div>
+                                </div>
+                            </div>
+                            <div class="corners">
+                                <div class="cc">
+                                    <div class="lab">左上</div>
+                                    <div class="xy"><input data-br="0" data-a="x" type="number" /><input data-br="0" data-a="y" type="number" /></div>
+                                </div>
+                                <div class="cc">
+                                    <div class="lab">右上</div>
+                                    <div class="xy"><input data-br="1" data-a="x" type="number" /><input data-br="1" data-a="y" type="number" /></div>
+                                </div>
+                                <div class="cc">
+                                    <div class="lab">左下</div>
+                                    <div class="xy"><input data-br="3" data-a="x" type="number" /><input data-br="3" data-a="y" type="number" /></div>
+                                </div>
+                                <div class="cc">
+                                    <div class="lab">右下</div>
+                                    <div class="xy"><input data-br="2" data-a="x" type="number" /><input data-br="2" data-a="y" type="number" /></div>
+                                </div>
+                            </div>
+                            <div class="grid2">
+                                <div class="field">
+                                    <div class="fl">横<span class="un">num_x</span></div>
+                                    <div class="stepper"><button data-t="rnx" data-d="-1">−</button><input id="rnx" type="number" min="0" value="4" /><button data-t="rnx" data-d="1">+</button></div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">縦<span class="un">num_y</span></div>
+                                    <div class="stepper"><button data-t="rny" data-d="-1">−</button><input id="rny" type="number" min="0" value="1" /><button data-t="rny" data-d="1">+</button></div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">すき間 X<span class="un">px</span></div>
+                                    <div class="stepper"><button data-t="rgapx" data-d="-5">−</button><input id="rgapx" type="number" value="0" /><button data-t="rgapx" data-d="5">+</button></div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">すき間 Y<span class="un">px</span></div>
+                                    <div class="stepper"><button data-t="rgapy" data-d="-5">−</button><input id="rgapy" type="number" value="0" /><button data-t="rgapy" data-d="5">+</button></div>
+                                </div>
+                            </div>
+                            <button class="btn primary" id="genRBtn" style="width: 100%; justify-content: center; margin-top: 12px">ROBOT枠を生成</button>
+                        </div>
+
+                        <div class="sect">
+                            <div class="sh">
+                                <div class="icchip l">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                </div>
+                                <div class="tt">
+                                    <h2>LiDAR 基準タイル</h2>
+                                    <span class="sub">別サイズで指定できます</span>
+                                </div>
+                                <span class="tag" id="baseLSize">–</span>
+                            </div>
+                            <div class="seg" id="drawModesL">
+                                <button data-mode="topedge" class="on">上辺2点</button>
+                                <button data-mode="leftedge">左辺2点</button>
+                                <button data-mode="4pt">四隅</button>
+                            </div>
+                            <div class="rowbtns" style="margin-top: 0">
+                                <button class="btn" id="startDrawL">基準タイルを描く</button>
+                                <button class="btn" id="copyFromR">ROBOTから複製</button>
+                            </div>
+                            <div class="grid2" style="margin-top: 9px">
+                                <div class="field" style="margin-top: 0">
+                                    <div class="fl">幅<span class="un">m</span></div>
+                                    <div class="stepper"><input id="szBLWm" type="number" step="0.05" /></div>
+                                </div>
+                                <div class="field" style="margin-top: 0">
+                                    <div class="fl">高さ<span class="un">m</span></div>
+                                    <div class="stepper"><input id="szBLHm" type="number" step="0.05" /></div>
+                                </div>
+                            </div>
+                            <div class="corners">
+                                <div class="cc">
+                                    <div class="lab">左上</div>
+                                    <div class="xy"><input data-bl="0" data-a="x" type="number" /><input data-bl="0" data-a="y" type="number" /></div>
+                                </div>
+                                <div class="cc">
+                                    <div class="lab">右上</div>
+                                    <div class="xy"><input data-bl="1" data-a="x" type="number" /><input data-bl="1" data-a="y" type="number" /></div>
+                                </div>
+                                <div class="cc">
+                                    <div class="lab">左下</div>
+                                    <div class="xy"><input data-bl="3" data-a="x" type="number" /><input data-bl="3" data-a="y" type="number" /></div>
+                                </div>
+                                <div class="cc">
+                                    <div class="lab">右下</div>
+                                    <div class="xy"><input data-bl="2" data-a="x" type="number" /><input data-bl="2" data-a="y" type="number" /></div>
+                                </div>
+                            </div>
+                            <div class="grid2">
+                                <div class="field">
+                                    <div class="fl">横<span class="un">num_x</span></div>
+                                    <div class="stepper"><button data-t="lnx" data-d="-1">−</button><input id="lnx" type="number" min="0" value="4" /><button data-t="lnx" data-d="1">+</button></div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">縦<span class="un">num_y</span></div>
+                                    <div class="stepper"><button data-t="lny" data-d="-1">−</button><input id="lny" type="number" min="0" value="1" /><button data-t="lny" data-d="1">+</button></div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">すき間 X<span class="un">px</span></div>
+                                    <div class="stepper"><button data-t="gapx" data-d="-5">−</button><input id="gapx" type="number" value="0" /><button data-t="gapx" data-d="5">+</button></div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">すき間 Y<span class="un">px</span></div>
+                                    <div class="stepper"><button data-t="gapy" data-d="-5">−</button><input id="gapy" type="number" value="0" /><button data-t="gapy" data-d="5">+</button></div>
+                                </div>
+                            </div>
+                            <button class="btn primary" id="genLBtn" style="width: 100%; justify-content: center; margin-top: 12px">LiDAR枠を生成</button>
+                            <p class="note">LiDAR基準タイル未指定の場合は、ROBOT基準を起点に配置方向の反対側へ自動配置します。</p>
+                        </div>
+
+                        <div class="sect">
+                            <div class="sh">
+                                <div class="icchip">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16M6 14l6 6 6-6" /></svg>
+                                </div>
+                                <div class="tt">
+                                    <h2>ROBOT 配置方向</h2>
+                                    <span class="sub">空き判定の走査向き</span>
+                                </div>
+                            </div>
+                            <div class="seg" id="dirSeg">
+                                <button data-dir="left"><span class="ar">←</span>左</button>
+                                <button data-dir="right"><span class="ar">→</span>右</button>
+                                <button data-dir="top"><span class="ar">↑</span>上</button>
+                                <button data-dir="bottom" class="on"><span class="ar">↓</span>下</button>
+                            </div>
+                            <div class="grid2">
+                                <div class="field">
+                                    <div class="fl">間隔<span class="un">px</span></div>
+                                    <div class="stepper"><button data-t="rgy" data-d="-5">−</button><input id="rgy" type="number" value="0" /><button data-t="rgy" data-d="5">+</button></div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">横ずれ<span class="un">px</span></div>
+                                    <div class="stepper"><button data-t="rgx" data-d="-5">−</button><input id="rgx" type="number" value="0" /><button data-t="rgx" data-d="5">+</button></div>
+                                </div>
+                            </div>
+                            <p class="note">枠の位置ではなく、空きエリアを探す向きの設定です（YAMLの robot_direction）。</p>
+                        </div>
+                    </div>
+
+                    <!-- ===== LIST ===== -->
+                    <div class="pane" id="paneList">
+                        <div class="sect">
+                            <div class="sh">
+                                <div class="icchip l">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                </div>
+                                <div class="tt">
+                                    <h2>LiDAR エリア</h2>
+                                    <span class="sub">番号順に空きを判定</span>
+                                </div>
+                                <span class="tag" id="lTag">0</span>
+                            </div>
+                            <div class="arealist" id="lList"></div>
+                            <div class="rowbtns">
+                                <button class="btn sm" id="addL">＋ 追加</button>
+                                <button class="btn sm" id="ordLm">← 前へ</button>
+                                <button class="btn sm" id="ordLp">後へ →</button>
+                            </div>
+                            <div class="rowbtns">
+                                <button class="btn sm" id="renumL">位置順に自動採番</button>
+                            </div>
+                            <div id="lWarn"></div>
+                        </div>
+
+                        <div class="sect">
+                            <div class="sh">
+                                <div class="icchip r">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
+                                </div>
+                                <div class="tt">
+                                    <h2>ROBOT エリア</h2>
+                                    <span class="sub">ロボットの停止位置</span>
+                                </div>
+                                <span class="tag" id="rTag">0</span>
+                            </div>
+                            <div class="arealist" id="rList"></div>
+                            <div class="rowbtns">
+                                <button class="btn sm" id="addR">＋ 追加</button>
+                                <button class="btn sm" id="ordRm">← 前へ</button>
+                                <button class="btn sm" id="ordRp">後へ →</button>
+                            </div>
+                            <div class="rowbtns">
+                                <button class="btn sm" id="renumR">位置順に自動採番</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== EDIT ===== -->
+                    <div class="pane" id="paneEdit">
+                        <div class="selnone" id="selNone">枠をクリックして選択してください。<br />Shift+クリックで複数選択できます。</div>
+
+                        <div id="selOne" style="display: none">
+                            <div class="sect">
+                                <div class="selhead" id="selHead"><span class="nm" id="selName">L1</span><span class="meta" id="selMeta"></span></div>
+                                <div class="grid2">
+                                    <div class="field">
+                                        <div class="fl">幅<span class="un">px</span></div>
+                                        <div class="stepper"><button data-sz="w" data-d="-5">−</button><input id="szW" type="number" /><button data-sz="w" data-d="5">+</button></div>
+                                    </div>
+                                    <div class="field">
+                                        <div class="fl">高さ<span class="un">px</span></div>
+                                        <div class="stepper"><button data-sz="h" data-d="-5">−</button><input id="szH" type="number" /><button data-sz="h" data-d="5">+</button></div>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <div class="fl">角度<span class="un">度</span></div>
+                                    <div class="stepper"><button data-sz="a" data-d="-1">−</button><input id="szA" type="number" step="0.5" /><button data-sz="a" data-d="1">+</button></div>
+                                </div>
+                                <div class="rowbtns"><button class="btn sm" id="rectify">長方形に整える</button><button class="btn sm" id="applyAll">この形を全部に適用</button></div>
+                                <p class="note">幅・高さ・角度を数値で入力すると、その値ちょうどの平行四辺形に整形されます。</p>
+
+                                <div class="grid2" style="margin-top: 14px">
+                                    <div class="field" style="margin-top: 0">
+                                        <div class="fl">幅<span class="un">m</span></div>
+                                        <div class="stepper"><input id="szWm" type="number" step="0.05" /></div>
+                                    </div>
+                                    <div class="field" style="margin-top: 0">
+                                        <div class="fl">高さ<span class="un">m</span></div>
+                                        <div class="stepper"><input id="szHm" type="number" step="0.05" /></div>
+                                    </div>
+                                </div>
+                                <p class="note">m単位で入力すると、ヘッダーの解像度設定をもとにpx換算してその値ちょうどのサイズに整形されます。</p>
+                            </div>
+
+                            <div class="sect">
+                                <div class="sh">
+                                    <div class="tt">
+                                        <h2>四隅の座標</h2>
+                                        <span class="sub">px（左上が 0,0）</span>
+                                    </div>
+                                </div>
+                                <div class="corners">
+                                    <div class="cc">
+                                        <div class="lab">左上</div>
+                                        <div class="xy"><input data-s="0" data-a="x" type="number" /><input data-s="0" data-a="y" type="number" /></div>
+                                    </div>
+                                    <div class="cc">
+                                        <div class="lab">右上</div>
+                                        <div class="xy"><input data-s="1" data-a="x" type="number" /><input data-s="1" data-a="y" type="number" /></div>
+                                    </div>
+                                    <div class="cc">
+                                        <div class="lab">左下</div>
+                                        <div class="xy"><input data-s="3" data-a="x" type="number" /><input data-s="3" data-a="y" type="number" /></div>
+                                    </div>
+                                    <div class="cc">
+                                        <div class="lab">右下</div>
+                                        <div class="xy"><input data-s="2" data-a="x" type="number" /><input data-s="2" data-a="y" type="number" /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="selMulti" style="display: none">
+                            <div class="sect">
+                                <div class="selhead multi"><span class="nm" id="mulName">3枚選択中</span><span class="meta">まとめて操作</span></div>
+                                <div class="xflab">整列</div>
+                                <div class="xf"><button data-al="l">左揃え</button><button data-al="r">右揃え</button> <button data-al="t">上揃え</button><button data-al="b">下揃え</button></div>
+                                <div class="xf" style="grid-template-columns: 1fr 1fr"><button data-dist="x">横に等間隔</button><button data-dist="y">縦に等間隔</button></div>
+                                <div class="xflab">すき間を空ける</div>
+                                <div class="field" style="margin-top: 6px">
+                                    <div class="fl">すき間<span class="un">px</span></div>
+                                    <div class="stepper"><input id="gapEditPx" type="number" value="0" /></div>
+                                </div>
+                                <div class="rowbtns">
+                                    <button class="btn sm" id="applyGapX">横方向に詰める</button>
+                                    <button class="btn sm" id="applyGapY">縦方向に詰める</button>
+                                </div>
+                                <p class="note">選択した枠を位置順に並べ、指定したすき間になるよう間隔を調整します（サイズ・角度は変えません）。</p>
+                                <div class="xflab">サイズ・形</div>
+                                <div class="rowbtns"><button class="btn sm" id="sameShape">最初の枠の形に揃える</button></div>
+                            </div>
+                        </div>
+
+                        <div id="selAny" style="display: none">
+                            <div class="sect">
+                                <div class="xflab">回転</div>
+                                <div class="seg" id="rotPivotSeg" style="display: none; margin-top: 6px">
+                                    <button data-pivot="group" class="on">全体の中心</button>
+                                    <button data-pivot="each">各枠の中心</button>
+                                </div>
+                                <div class="xf"><button data-rot="-5">↺5°</button><button data-rot="-1">↺1°</button> <button data-rot="1">1°↻</button><button data-rot="5">5°↻</button></div>
+                                <div class="xflab">拡大 / 縮小</div>
+                                <div class="xf"><button data-scale="0.9">−10%</button><button data-scale="0.98">−2%</button> <button data-scale="1.02">+2%</button><button data-scale="1.1">+10%</button></div>
+                                <div class="xflab">移動（矢印キーでも可）</div>
+                                <div class="xf"><button data-mv="-1,0">←</button><button data-mv="0,-1">↑</button> <button data-mv="0,1">↓</button><button data-mv="1,0">→</button></div>
+                                <div class="rowbtns">
+                                    <button class="btn sm" id="dupSel">複製</button>
+                                    <button class="btn sm danger" id="delSel">削除</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== ROUTE ===== -->
+                    <div class="pane" id="paneRoute">
+                        <div class="sect">
+                            <div class="sh">
+                                <div class="icchip">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20 C4 12, 10 12, 10 8 C10 4, 16 4, 16 8 C16 12, 20 12, 20 4" /></svg>
+                                </div>
+                                <div class="tt">
+                                    <h2>登録ルート</h2>
+                                    <span class="sub">チェックしたルートをマップに表示</span>
+                                </div>
+                                <span class="tag" id="routeTag">0</span>
+                            </div>
+                            <div id="routeList"></div>
+                            <div class="rowbtns">
+                                <button class="btn sm" id="refreshRoutes">更新</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="scrim" id="scrim"></div>
+        <div class="drawer" id="drawer">
+            <div class="dh">
+                <b>設定の書き出し</b>
+                <div class="spacer"></div>
+                <button class="btn" id="closeDrawer">閉じる</button>
+            </div>
+            <div class="db">
+                <div id="exWarn"></div>
+                <div class="tabs" id="exTabs">
+                    <button data-t="yaml" class="on">frame_config.yaml</button>
+                    <button data-t="json">JSON</button>
+                </div>
+                <pre class="out" id="exOut"></pre>
+                <div class="dlrow">
+                    <button class="btn primary" id="copyOut">コピー</button>
+                    <button class="btn" id="dlOut">ファイル保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+
+        <script>
+            "use strict";
+            const cv = document.getElementById("cv"),
+                ctx = cv.getContext("2d"),
+                stage = document.getElementById("stage");
+            const $ = (id) => document.getElementById(id);
+            const RULER = 26;
+
+            /* ---------- state ---------- */
+            let img = null,
+                imgW = 0,
+                imgH = 0;
+            let view = { scale: 1, x: 0, y: 0 };
+            let L = [],
+                R = [];
+            let sel = []; // [{t:'L'|'R',i:int}]
+            let baseR = null,
+                baseL = null;
+            let drawModeR = "topedge",
+                drawModeL = "topedge",
+                drawing = null,
+                drawPts = [];
+            let mouseScr = null,
+                mouseImg = null;
+            let drag = null,
+                panning = false,
+                panStart = null;
+            let hist = [],
+                future = [];
+            let robotPose = null; // {x,y,angle} in map-image px, same coords as L/R corners
+            let mapResolution = 0.05; // m/px
+            let routes = []; // [{name, waypoints:[{x,y},...], angle}]
+            let routeVisible = {}; // name -> boolean
+
+            /* ---------- math ---------- */
+            const sub = (a, b) => [a[0] - b[0], a[1] - b[1]],
+                add = (a, b) => [a[0] + b[0], a[1] + b[1]],
+                mul = (a, k) => [a[0] * k, a[1] * k];
+            const norm = (a) => Math.hypot(a[0], a[1]),
+                unit = (a) => {
+                    const n = norm(a) || 1;
+                    return [a[0] / n, a[1] / n];
+                };
+            const toScreen = (p) => [p[0] * view.scale + view.x, p[1] * view.scale + view.y];
+            const toImg = (sx, sy) => [(sx - view.x) / view.scale, (sy - view.y) / view.scale];
+            const cent = (p) => {
+                let x = 0,
+                    y = 0;
+                p.forEach((q) => {
+                    x += q[0];
+                    y += q[1];
+                });
+                return [x / p.length, y / p.length];
+            };
+            const clone = (p) => p.map((q) => [q[0], q[1]]);
+            const arr = (t) => (t === "L" ? L : R);
+            const polyOf = (s) => arr(s.t)[s.i];
+            const selPolys = () => sel.map(polyOf).filter(Boolean);
+            const one = () => (sel.length === 1 ? polyOf(sel[0]) : null);
+            const isSel = (t, i) => sel.some((s) => s.t === t && s.i === i);
+            const wOf = (p) => norm(sub(p[1], p[0])),
+                hOf = (p) => norm(sub(p[3], p[0]));
+            const angOf = (p) => {
+                const u = sub(p[1], p[0]);
+                return (Math.atan2(u[1], u[0]) * 180) / Math.PI;
+            };
+
+            function squareFrom(p0, p1, mode) {
+                if (mode === "topedge") {
+                    const u = sub(p1, p0);
+                    let v = [-u[1], u[0]];
+                    if (v[1] < 0) v = [-v[0], -v[1]];
+                    return [p0, p1, add(p1, v), add(p0, v)];
+                }
+                const v = sub(p1, p0);
+                let u = [v[1], -v[0]];
+                if (u[0] < 0) u = [-u[0], -u[1]];
+                return [p0, add(p0, u), add(p1, u), p1];
+            }
+            function pointIn(pt, poly) {
+                let c = false;
+                for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                    const xi = poly[i][0],
+                        yi = poly[i][1],
+                        xj = poly[j][0],
+                        yj = poly[j][1];
+                    if (yi > pt[1] !== yj > pt[1] && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) c = !c;
+                }
+                return c;
+            }
+            function rotHandle(p) {
+                const c = cent(p),
+                    tm = [(p[0][0] + p[1][0]) / 2, (p[0][1] + p[1][1]) / 2];
+                return add(tm, mul(unit(sub(tm, c)), 26 / view.scale));
+            }
+            function bbox(polys) {
+                let x0 = 1e9,
+                    y0 = 1e9,
+                    x1 = -1e9,
+                    y1 = -1e9;
+                polys.forEach((p) =>
+                    p.forEach((q) => {
+                        x0 = Math.min(x0, q[0]);
+                        y0 = Math.min(y0, q[1]);
+                        x1 = Math.max(x1, q[0]);
+                        y1 = Math.max(y1, q[1]);
+                    }),
+                );
+                return { x0, y0, x1, y1 };
+            }
+
+            /* ---------- history ---------- */
+            function snap() {
+                return JSON.stringify({ L, R, baseR, baseL });
+            }
+            function push() {
+                hist.push(snap());
+                if (hist.length > 60) hist.shift();
+                future = [];
+                updUndo();
+            }
+            function restore(s) {
+                const o = JSON.parse(s);
+                L = o.L;
+                R = o.R;
+                baseR = o.baseR;
+                baseL = o.baseL;
+                sel = sel.filter((x) => arr(x.t)[x.i]);
+                render();
+            }
+            function undo() {
+                if (!hist.length) return;
+                future.push(snap());
+                restore(hist.pop());
+                updUndo();
+            }
+            function redo() {
+                if (!future.length) return;
+                hist.push(snap());
+                restore(future.pop());
+                updUndo();
+            }
+            function updUndo() {
+                $("undoBtn").disabled = !hist.length;
+                $("redoBtn").disabled = !future.length;
+            }
+            $("undoBtn").onclick = undo;
+            $("redoBtn").onclick = redo;
+
+            /* ---------- canvas ---------- */
+            function resize() {
+                const r = stage.getBoundingClientRect();
+                cv.width = r.width;
+                cv.height = r.height;
+                render();
+            }
+            new ResizeObserver(resize).observe(stage);
+            function fit() {
+                if (!img) return;
+                const pad = 70,
+                    r = stage.getBoundingClientRect();
+                const s = Math.min((r.width - pad) / imgW, (r.height - pad) / imgH);
+                view.scale = s;
+                view.x = (r.width - imgW * s) / 2 + RULER / 2;
+                view.y = (r.height - imgH * s) / 2 + RULER / 2;
+                render();
+            }
+            function grid() {
+                const ticks = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000];
+                let st = 10;
+                for (const t of ticks) {
+                    if (t * view.scale >= 52) {
+                        st = t;
+                        break;
+                    }
+                }
+                const set = (sp, col) => {
+                    ctx.strokeStyle = col;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    const x0 = Math.ceil(toImg(RULER, 0)[0] / sp) * sp,
+                        xE = toImg(cv.width, 0)[0];
+                    for (let i = x0; i < xE; i += sp) {
+                        const s = toScreen([i, 0])[0];
+                        ctx.moveTo(s, RULER);
+                        ctx.lineTo(s, cv.height);
+                    }
+                    const y0 = Math.ceil(toImg(0, RULER)[1] / sp) * sp,
+                        yE = toImg(0, cv.height)[1];
+                    for (let i = y0; i < yE; i += sp) {
+                        const s = toScreen([0, i])[1];
+                        ctx.moveTo(RULER, s);
+                        ctx.lineTo(cv.width, s);
+                    }
+                    ctx.stroke();
+                };
+                set(st, "#eef2f6");
+                set(st * 5, "#e0e6ee");
+                return st * 5;
+            }
+            function rulers(step) {
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(0, 0, cv.width, RULER);
+                ctx.fillRect(0, 0, RULER, cv.height);
+                ctx.strokeStyle = "#e7ebf1";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, RULER + 0.5);
+                ctx.lineTo(cv.width, RULER + 0.5);
+                ctx.moveTo(RULER + 0.5, 0);
+                ctx.lineTo(RULER + 0.5, cv.height);
+                ctx.stroke();
+                ctx.fillStyle = "#f4f6f9";
+                ctx.fillRect(0, 0, RULER, RULER);
+                ctx.font = "9px ui-monospace,monospace";
+                ctx.fillStyle = "#9aa5b3";
+                ctx.textBaseline = "alphabetic";
+                ctx.textAlign = "center";
+                const x0 = Math.ceil(toImg(RULER, 0)[0] / step) * step,
+                    xE = toImg(cv.width, 0)[0];
+                for (let i = x0; i < xE; i += step) {
+                    const s = toScreen([i, 0])[0];
+                    if (s < RULER + 10) continue;
+                    ctx.strokeStyle = "#cfd7e2";
+                    ctx.beginPath();
+                    ctx.moveTo(s, RULER - 5);
+                    ctx.lineTo(s, RULER);
+                    ctx.stroke();
+                    ctx.fillText(i, s, RULER - 8);
+                }
+                const y0 = Math.ceil(toImg(0, RULER)[1] / step) * step,
+                    yE = toImg(0, cv.height)[1];
+                for (let i = y0; i < yE; i += step) {
+                    const s = toScreen([0, i])[1];
+                    if (s < RULER + 8) continue;
+                    ctx.strokeStyle = "#cfd7e2";
+                    ctx.beginPath();
+                    ctx.moveTo(RULER - 5, s);
+                    ctx.lineTo(RULER, s);
+                    ctx.stroke();
+                    ctx.save();
+                    ctx.translate(RULER - 8, s);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.textAlign = "center";
+                    ctx.fillText(i, 0, 0);
+                    ctx.restore();
+                }
+                if (mouseScr) {
+                    ctx.fillStyle = "#15212e";
+                    ctx.fillRect(mouseScr[0] - 0.5, 0, 1, RULER);
+                    ctx.fillRect(0, mouseScr[1] - 0.5, RULER, 1);
+                }
+            }
+            function path(p) {
+                ctx.beginPath();
+                p.forEach((q, i) => {
+                    const s = toScreen(q);
+                    i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]);
+                });
+                ctx.closePath();
+            }
+            function render() {
+                ctx.clearRect(0, 0, cv.width, cv.height);
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(0, 0, cv.width, cv.height);
+                const maj = grid();
+                if (img) {
+                    ctx.save();
+                    ctx.shadowColor = "rgba(21,33,46,.14)";
+                    ctx.shadowBlur = 18;
+                    ctx.shadowOffsetY = 4;
+                    ctx.fillStyle = "#fff";
+                    ctx.fillRect(view.x, view.y, imgW * view.scale, imgH * view.scale);
+                    ctx.restore();
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(img, view.x, view.y, imgW * view.scale, imgH * view.scale);
+                    ctx.strokeStyle = "#d7dee8";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(view.x, view.y, imgW * view.scale, imgH * view.scale);
+                }
+                const paint = (a, t, col, fill, lab) =>
+                    a.forEach((p, i) => {
+                        const on = isSel(t, i);
+                        path(p);
+                        ctx.fillStyle = on ? fill.replace(/[\d.]+\)$/, ".26)") : fill;
+                        ctx.fill();
+                        ctx.strokeStyle = col;
+                        ctx.lineWidth = on ? 3 : 2;
+                        ctx.lineJoin = "round";
+                        ctx.stroke();
+                        if (view.scale > 0.45) {
+                            const c = toScreen(cent(p));
+                            ctx.fillStyle = col;
+                            ctx.font = (on ? "700 " : "600 ") + "11px ui-monospace,monospace";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(lab + (i + 1), c[0], c[1]);
+                        }
+                    });
+                paint(L, "L", "#e5484d", "rgba(229,72,77,.10)", "L");
+                paint(R, "R", "#3b6ef5", "rgba(59,110,245,.11)", "R");
+                const ghost = (b, col) => {
+                    if (!b) return;
+                    path(b);
+                    ctx.setLineDash([5, 4]);
+                    ctx.strokeStyle = col;
+                    ctx.lineWidth = 1.6;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    b.forEach((q) => {
+                        const s = toScreen(q);
+                        ctx.fillStyle = "#fff";
+                        ctx.strokeStyle = col;
+                        ctx.lineWidth = 1.6;
+                        ctx.beginPath();
+                        ctx.arc(s[0], s[1], 4.5, 0, 7);
+                        ctx.fill();
+                        ctx.stroke();
+                    });
+                };
+                ghost(baseR, "#3b6ef5");
+                ghost(baseL, "#e5484d");
+                if (img) {
+                    const s = toScreen([0, 0]);
+                    ctx.strokeStyle = "#15212e";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(s[0], s[1]);
+                    ctx.lineTo(s[0] + 16, s[1]);
+                    ctx.moveTo(s[0], s[1]);
+                    ctx.lineTo(s[0], s[1] + 16);
+                    ctx.stroke();
+                    ctx.fillStyle = "#15212e";
+                    ctx.beginPath();
+                    ctx.arc(s[0], s[1], 3, 0, 7);
+                    ctx.fill();
+                    ctx.font = "600 10px ui-monospace,monospace";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "top";
+                    ctx.fillText("0,0", s[0] + 5, s[1] + 4);
+                }
+                routes.forEach((r) => {
+                    if (!routeVisible[r.name] || !r.waypoints || r.waypoints.length < 2) return;
+                    // 各waypoint（先に描いて、線を上に重ねることで隣接点間の短い区間も隠れないようにする）
+                    ctx.fillStyle = "#0d9488";
+                    r.waypoints.forEach((wp, i) => {
+                        const s = toScreen([wp.x, wp.y]);
+                        ctx.beginPath();
+                        ctx.arc(s[0], s[1], i === 0 || i === r.waypoints.length - 1 ? 4.5 : 3, 0, 7);
+                        ctx.fill();
+                        if (i === 0) {
+                            ctx.strokeStyle = "#fff";
+                            ctx.lineWidth = 1.5;
+                            ctx.stroke();
+                        }
+                    });
+                    ctx.beginPath();
+                    r.waypoints.forEach((wp, i) => {
+                        const s = toScreen([wp.x, wp.y]);
+                        i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]);
+                    });
+                    ctx.strokeStyle = "#0d9488";
+                    ctx.lineWidth = 2.5;
+                    ctx.lineJoin = "round";
+                    ctx.lineCap = "round";
+                    ctx.stroke();
+                    // 終点の向き
+                    const last = r.waypoints[r.waypoints.length - 1];
+                    const sL = toScreen([last.x, last.y]);
+                    const ang = ((-(+r.angle || 0)) * Math.PI) / 180;
+                    const tip = [sL[0] + Math.cos(ang) * 18, sL[1] + Math.sin(ang) * 18];
+                    ctx.strokeStyle = "#0d9488";
+                    ctx.lineWidth = 2.5;
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(sL[0], sL[1]);
+                    ctx.lineTo(tip[0], tip[1]);
+                    ctx.stroke();
+                    const back = (Math.PI * 5) / 6;
+                    ctx.fillStyle = "#0d9488";
+                    ctx.beginPath();
+                    ctx.moveTo(tip[0], tip[1]);
+                    ctx.lineTo(tip[0] + Math.cos(ang + back) * 7, tip[1] + Math.sin(ang + back) * 7);
+                    ctx.lineTo(tip[0] + Math.cos(ang - back) * 7, tip[1] + Math.sin(ang - back) * 7);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+                if (robotPose) {
+                    const s = toScreen([robotPose.x, robotPose.y]);
+                    // pose.x/y は画像px座標系(y下向き)だが angle はROSのmap座標系(y上向き)のyawそのままなので符号を反転して合わせる
+                    const a = (-(robotPose.angle || 0) * Math.PI) / 180;
+                    const tip = [s[0] + Math.cos(a) * 22, s[1] + Math.sin(a) * 22];
+                    ctx.strokeStyle = "#7c3aed";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(s[0], s[1]);
+                    ctx.lineTo(tip[0], tip[1]);
+                    ctx.stroke();
+                    const back = (Math.PI * 5) / 6;
+                    [-back, back].forEach((off) => {
+                        const w = [tip[0] + Math.cos(a + off) * 8, tip[1] + Math.sin(a + off) * 8];
+                        ctx.beginPath();
+                        ctx.moveTo(tip[0], tip[1]);
+                        ctx.lineTo(w[0], w[1]);
+                        ctx.stroke();
+                    });
+                    ctx.fillStyle = "rgba(124,58,237,.22)";
+                    ctx.beginPath();
+                    ctx.arc(s[0], s[1], 9, 0, 7);
+                    ctx.fill();
+                    ctx.strokeStyle = "#7c3aed";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(s[0], s[1], 9, 0, 7);
+                    ctx.stroke();
+                }
+                const p = one();
+                if (p) {
+                    const col = sel[0].t === "L" ? "#e5484d" : "#3b6ef5";
+                    const rh = toScreen(rotHandle(p)),
+                        tm = toScreen([(p[0][0] + p[1][0]) / 2, (p[0][1] + p[1][1]) / 2]);
+                    ctx.strokeStyle = col;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(tm[0], tm[1]);
+                    ctx.lineTo(rh[0], rh[1]);
+                    ctx.stroke();
+                    ctx.fillStyle = "#fff";
+                    ctx.beginPath();
+                    ctx.arc(rh[0], rh[1], 6, 0, 7);
+                    ctx.fill();
+                    ctx.stroke();
+                    p.forEach((q) => {
+                        const s = toScreen(q);
+                        ctx.fillStyle = "#fff";
+                        ctx.strokeStyle = col;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(s[0], s[1], 5.5, 0, 7);
+                        ctx.fill();
+                        ctx.stroke();
+                    });
+                } else if (sel.length > 1) {
+                    const b = bbox(selPolys()),
+                        a = toScreen([b.x0, b.y0]),
+                        c = toScreen([b.x1, b.y1]);
+                    ctx.setLineDash([4, 4]);
+                    ctx.strokeStyle = "#15212e";
+                    ctx.lineWidth = 1.2;
+                    ctx.strokeRect(a[0], a[1], c[0] - a[0], c[1] - a[1]);
+                    ctx.setLineDash([]);
+                }
+                if (drawing)
+                    drawPts.forEach((q) => {
+                        const s = toScreen(q);
+                        ctx.fillStyle = "#e08a1e";
+                        ctx.beginPath();
+                        ctx.arc(s[0], s[1], 5, 0, 7);
+                        ctx.fill();
+                    });
+                rulers(maj);
+                syncUI();
+            }
+
+            /* ---------- UI ---------- */
+            let tab = "gen";
+            document.querySelectorAll(".tabbar button").forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
+            function setTab(t) {
+                tab = t;
+                document.querySelectorAll(".tabbar button").forEach((b) => b.classList.toggle("on", b.dataset.tab === t));
+                ["gen", "list", "edit", "route"].forEach((k) => $("pane" + k[0].toUpperCase() + k.slice(1)).classList.toggle("on", k === t));
+            }
+            function fmtSize(p) {
+                return p ? `${Math.round(wOf(p))}×${Math.round(hOf(p))}` : "–";
+            }
+            function syncUI() {
+                $("legL").textContent = L.length;
+                $("legR").textContent = R.length;
+                $("lTag").textContent = L.length;
+                $("rTag").textContent = R.length;
+                $("tabCnt").textContent = L.length + R.length;
+                $("tabSel").textContent = sel.length ? sel.length : "";
+                $("zlbl").textContent = Math.round(view.scale * 100) + "%";
+                $("baseRSize").textContent = fmtSize(baseR);
+                $("baseLSize").textContent = fmtSize(baseL);
+                if (document.activeElement !== $("szBRWm")) $("szBRWm").value = baseR ? (wOf(baseR) * mapResolution).toFixed(2) : "";
+                if (document.activeElement !== $("szBRHm")) $("szBRHm").value = baseR ? (hOf(baseR) * mapResolution).toFixed(2) : "";
+                if (document.activeElement !== $("szBLWm")) $("szBLWm").value = baseL ? (wOf(baseL) * mapResolution).toFixed(2) : "";
+                if (document.activeElement !== $("szBLHm")) $("szBLHm").value = baseL ? (hOf(baseL) * mapResolution).toFixed(2) : "";
+                const mk = (a, t, el, cls) => {
+                    el.innerHTML = "";
+                    a.forEach((p, i) => {
+                        const b = document.createElement("button");
+                        b.className = "apill " + cls + (isSel(t, i) ? " on" : "");
+                        b.textContent = (t === "L" ? "L" : "R") + (i + 1);
+                        b.onclick = (e) => {
+                            if (e.shiftKey) {
+                                if (isSel(t, i)) sel = sel.filter((s) => !(s.t === t && s.i === i));
+                                else sel.push({ t, i });
+                            } else sel = [{ t, i }];
+                            render();
+                        };
+                        el.appendChild(b);
+                    });
+                    if (!a.length) {
+                        const s = document.createElement("span");
+                        s.className = "note";
+                        s.textContent = "なし";
+                        el.appendChild(s);
+                    }
+                };
+                mk(L, "L", $("lList"), "l");
+                mk(R, "R", $("rList"), "r");
+                // validation
+                const need = +$("lnx").value * +$("lny").value;
+                $("lWarn").innerHTML =
+                    L.length && need && L.length !== need
+                        ? `<div class="warn bad"><span>⚠</span><span>枚数が num_x×num_y と一致しません（${L.length} ≠ ${need}）。空き判定がずれる可能性があります。「生成」タブの数値を合わせてください。</span></div>`
+                        : L.length
+                          ? `<div class="warn good"><span>✓</span><span>${$("lnx").value} × ${$("lny").value} = ${L.length} 枚で整合しています。</span></div>`
+                          : "";
+                // selected panels
+                const p = one();
+                $("selNone").style.display = sel.length ? "none" : "block";
+                $("selOne").style.display = p ? "block" : "none";
+                $("selMulti").style.display = sel.length > 1 ? "block" : "none";
+                $("selAny").style.display = sel.length ? "block" : "none";
+                $("rotPivotSeg").style.display = sel.length > 1 ? "flex" : "none";
+                if (p) {
+                    $("selName").textContent = (sel[0].t === "L" ? "L" : "R") + (sel[0].i + 1);
+                    $("selHead").className = "selhead " + (sel[0].t === "L" ? "l" : "r");
+                    const c = cent(p);
+                    $("selMeta").textContent = `中心 ${Math.round(c[0])}, ${Math.round(c[1])}`;
+                    if (document.activeElement !== $("szW")) $("szW").value = Math.round(wOf(p));
+                    if (document.activeElement !== $("szH")) $("szH").value = Math.round(hOf(p));
+                    if (document.activeElement !== $("szA")) $("szA").value = angOf(p).toFixed(1);
+                    if (document.activeElement !== $("szWm")) $("szWm").value = (wOf(p) * mapResolution).toFixed(2);
+                    if (document.activeElement !== $("szHm")) $("szHm").value = (hOf(p) * mapResolution).toFixed(2);
+                    document.querySelectorAll("[data-s]").forEach((inp) => {
+                        if (document.activeElement === inp) return;
+                        inp.value = Math.round(p[+inp.dataset.s][inp.dataset.a === "x" ? 0 : 1]);
+                    });
+                }
+                if (sel.length > 1) $("mulName").textContent = sel.length + "枚選択中";
+                document.querySelectorAll("[data-br]").forEach((inp) => {
+                    if (document.activeElement === inp) return;
+                    inp.value = baseR ? Math.round(baseR[+inp.dataset.br][inp.dataset.a === "x" ? 0 : 1]) : "";
+                });
+                document.querySelectorAll("[data-bl]").forEach((inp) => {
+                    if (document.activeElement === inp) return;
+                    inp.value = baseL ? Math.round(baseL[+inp.dataset.bl][inp.dataset.a === "x" ? 0 : 1]) : "";
+                });
+            }
+
+            /* corner + base inputs */
+            document.querySelectorAll("[data-s]").forEach((inp) => {
+                inp.addEventListener("focus", push);
+                inp.addEventListener("input", () => {
+                    const p = one();
+                    if (!p) return;
+                    p[+inp.dataset.s][inp.dataset.a === "x" ? 0 : 1] = +inp.value || 0;
+                    render();
+                });
+            });
+            document.querySelectorAll("[data-br]").forEach((inp) => {
+                inp.addEventListener("focus", push);
+                inp.addEventListener("input", () => {
+                    if (!baseR)
+                        baseR = [
+                            [0, 0],
+                            [0, 0],
+                            [0, 0],
+                            [0, 0],
+                        ];
+                    baseR[+inp.dataset.br][inp.dataset.a === "x" ? 0 : 1] = +inp.value || 0;
+                    render();
+                });
+            });
+            document.querySelectorAll("[data-bl]").forEach((inp) => {
+                inp.addEventListener("focus", push);
+                inp.addEventListener("input", () => {
+                    if (!baseL)
+                        baseL = [
+                            [0, 0],
+                            [0, 0],
+                            [0, 0],
+                            [0, 0],
+                        ];
+                    baseL[+inp.dataset.bl][inp.dataset.a === "x" ? 0 : 1] = +inp.value || 0;
+                    render();
+                });
+            });
+
+            /* ---------- transforms ---------- */
+            let rotPivot = "group"; // 'group' = 選択範囲の中心 / 'each' = 各枠それぞれの中心
+            function rotateSel(deg) {
+                if (!sel.length) return;
+                push();
+                const ps = selPolys();
+                const a = (deg * Math.PI) / 180,
+                    cs = Math.cos(a),
+                    sn = Math.sin(a);
+                if (sel.length > 1 && rotPivot === "each") {
+                    // 各枠それぞれの中心で回転
+                    ps.forEach((p) => {
+                        const c = cent(p);
+                        for (let i = 0; i < 4; i++) {
+                            const dx = p[i][0] - c[0],
+                                dy = p[i][1] - c[1];
+                            p[i] = [c[0] + dx * cs - dy * sn, c[1] + dx * sn + dy * cs];
+                        }
+                    });
+                } else {
+                    // 選択範囲全体の中心で回転（従来どおり）
+                    const c = sel.length > 1 ? cent(ps.flat()) : cent(ps[0]);
+                    ps.forEach((p) => {
+                        for (let i = 0; i < 4; i++) {
+                            const dx = p[i][0] - c[0],
+                                dy = p[i][1] - c[1];
+                            p[i] = [c[0] + dx * cs - dy * sn, c[1] + dx * sn + dy * cs];
+                        }
+                    });
+                }
+                render();
+            }
+            function scaleSel(k) {
+                if (!sel.length) return;
+                push();
+                const ps = selPolys(),
+                    c = sel.length > 1 ? cent(ps.flat()) : cent(ps[0]);
+                ps.forEach((p) => {
+                    for (let i = 0; i < 4; i++) p[i] = [c[0] + (p[i][0] - c[0]) * k, c[1] + (p[i][1] - c[1]) * k];
+                });
+                render();
+            }
+            function moveSel(dx, dy, noPush) {
+                if (!sel.length) return;
+                if (!noPush) push();
+                selPolys().forEach((p) => {
+                    for (let i = 0; i < 4; i++) {
+                        p[i][0] += dx;
+                        p[i][1] += dy;
+                    }
+                });
+                render();
+            }
+            // rebuild as parallelogram with given w/h/angle, keeping centroid
+            function setWHA(p, w, h, angDeg) {
+                const c = cent(p);
+                const a = (angDeg * Math.PI) / 180;
+                const u = [Math.cos(a) * w, Math.sin(a) * w];
+                const vDir = [-Math.sin(a), Math.cos(a)];
+                const v = [vDir[0] * h, vDir[1] * h];
+                const p0 = [c[0] - (u[0] + v[0]) / 2, c[1] - (u[1] + v[1]) / 2];
+                const np = [p0, add(p0, u), add(add(p0, u), v), add(p0, v)];
+                for (let i = 0; i < 4; i++) p[i] = np[i];
+            }
+            ["szW", "szH", "szA"].forEach((id) => {
+                $(id).addEventListener("focus", push);
+                $(id).addEventListener("input", () => {
+                    const p = one();
+                    if (!p) return;
+                    setWHA(p, +$("szW").value || 1, +$("szH").value || 1, +$("szA").value || 0);
+                    render();
+                });
+            });
+            const M_SIZE_IDS = ["szWm", "szHm", "szBRWm", "szBRHm", "szBLWm", "szBLHm"];
+            function syncMStep() {
+                M_SIZE_IDS.forEach((id) => $(id).step = mapResolution);
+            }
+            $("mapRes").addEventListener("input", () => {
+                mapResolution = +$("mapRes").value || 0.05;
+                syncMStep();
+                render();
+            });
+            syncMStep();
+            ["szWm", "szHm"].forEach((id) => {
+                $(id).addEventListener("focus", push);
+                $(id).addEventListener("input", () => {
+                    const p = one();
+                    if (!p) return;
+                    const w = (+$("szWm").value || 0) / mapResolution,
+                        h = (+$("szHm").value || 0) / mapResolution;
+                    setWHA(p, Math.max(1, w), Math.max(1, h), angOf(p));
+                    render();
+                });
+            });
+            function ensureBaseTile(which) {
+                const cur = which === "R" ? baseR : baseL;
+                if (cur) return cur;
+                const cx = img ? imgW / 2 : 200,
+                    cy = img ? imgH / 2 : 200;
+                const tile = [
+                    [cx - 20, cy - 20],
+                    [cx + 20, cy - 20],
+                    [cx + 20, cy + 20],
+                    [cx - 20, cy + 20],
+                ];
+                if (which === "R") baseR = tile;
+                else baseL = tile;
+                return tile;
+            }
+            [
+                ["szBRWm", "szBRHm", "R"],
+                ["szBLWm", "szBLHm", "L"],
+            ].forEach(([wid, hid, which]) => {
+                $(wid).addEventListener("focus", push);
+                $(hid).addEventListener("focus", push);
+                const apply = () => {
+                    const t = ensureBaseTile(which);
+                    const w = (+$(wid).value || 0) / mapResolution,
+                        h = (+$(hid).value || 0) / mapResolution;
+                    setWHA(t, Math.max(1, w), Math.max(1, h), angOf(t));
+                    render();
+                };
+                $(wid).addEventListener("input", apply);
+                $(hid).addEventListener("input", apply);
+            });
+            document.querySelectorAll("[data-sz]").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        const p = one();
+                        if (!p) return;
+                        push();
+                        const k = b.dataset.sz,
+                            d = +b.dataset.d;
+                        let w = wOf(p),
+                            h = hOf(p),
+                            a = angOf(p);
+                        if (k === "w") w += d;
+                        else if (k === "h") h += d;
+                        else a += d;
+                        setWHA(p, Math.max(1, w), Math.max(1, h), a);
+                        render();
+                    }),
+            );
+            $("rectify").onclick = () => {
+                const p = one();
+                if (!p) return;
+                push();
+                setWHA(p, wOf(p), hOf(p), angOf(p));
+                render();
+                toast("長方形に整えました");
+            };
+            $("applyAll").onclick = () => {
+                const p = one();
+                if (!p) return;
+                push();
+                const w = wOf(p),
+                    h = hOf(p),
+                    a = angOf(p),
+                    t = sel[0].t;
+                arr(t).forEach((q) => setWHA(q, w, h, a));
+                render();
+                toast("同じ形に揃えました");
+            };
+            $("sameShape").onclick = () => {
+                if (sel.length < 2) return;
+                push();
+                const src = polyOf(sel[0]),
+                    w = wOf(src),
+                    h = hOf(src),
+                    a = angOf(src);
+                sel.slice(1).forEach((s) => setWHA(polyOf(s), w, h, a));
+                render();
+                toast("形を揃えました");
+            };
+            document.querySelectorAll("[data-rot]").forEach((b) => (b.onclick = () => rotateSel(+b.dataset.rot)));
+            document.querySelectorAll("#rotPivotSeg button").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        document.querySelectorAll("#rotPivotSeg button").forEach((x) => x.classList.remove("on"));
+                        b.classList.add("on");
+                        rotPivot = b.dataset.pivot;
+                    }),
+            );
+            document.querySelectorAll("[data-scale]").forEach((b) => (b.onclick = () => scaleSel(+b.dataset.scale)));
+            document.querySelectorAll("[data-mv]").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        const [a, c] = b.dataset.mv.split(",").map(Number);
+                        moveSel(a, c);
+                    }),
+            );
+            document.querySelectorAll("[data-al]").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        if (sel.length < 2) return;
+                        push();
+                        const ps = selPolys(),
+                            bs = ps.map((p) => bbox([p])),
+                            g = bbox(ps),
+                            k = b.dataset.al;
+                        ps.forEach((p, i) => {
+                            let dx = 0,
+                                dy = 0;
+                            if (k === "l") dx = g.x0 - bs[i].x0;
+                            else if (k === "r") dx = g.x1 - bs[i].x1;
+                            else if (k === "t") dy = g.y0 - bs[i].y0;
+                            else dy = g.y1 - bs[i].y1;
+                            for (let j = 0; j < 4; j++) {
+                                p[j][0] += dx;
+                                p[j][1] += dy;
+                            }
+                        });
+                        render();
+                    }),
+            );
+            document.querySelectorAll("[data-dist]").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        if (sel.length < 3) return;
+                        push();
+                        const ax = b.dataset.dist === "x" ? 0 : 1;
+                        const items = selPolys()
+                            .map((p) => ({ p, c: cent(p) }))
+                            .sort((a, b2) => a.c[ax] - b2.c[ax]);
+                        const first = items[0].c[ax],
+                            last = items[items.length - 1].c[ax];
+                        const stepv = (last - first) / (items.length - 1);
+                        items.forEach((it, i) => {
+                            const d = first + stepv * i - it.c[ax];
+                            for (let j = 0; j < 4; j++) it.p[j][ax] += d;
+                        });
+                        render();
+                        toast("等間隔に配置しました");
+                    }),
+            );
+            function applyGap(axis) {
+                if (sel.length < 2) return;
+                const ps = selPolys();
+                // 枠自身の辺の向き(横=u, 縦=v)を基準にする。画面のx/y軸だと枠が少しでも
+                // 回転しているとバウンディングボックスが実際の辺より広くなり、指定した
+                // すき間より大きく(または負の値でようやく詰まって見える)ズレてしまうため。
+                const dir = axis === "x" ? unit(sub(ps[0][1], ps[0][0])) : unit(sub(ps[0][3], ps[0][0]));
+                push();
+                const gap = +$("gapEditPx").value || 0;
+                const items = ps
+                    .map((p) => {
+                        const projs = p.map((q) => q[0] * dir[0] + q[1] * dir[1]);
+                        return { p, lo: Math.min(...projs), hi: Math.max(...projs) };
+                    })
+                    .sort((a, b) => a.lo - b.lo);
+                let edge = items[0].hi;
+                for (let i = 1; i < items.length; i++) {
+                    const it = items[i];
+                    const d = edge + gap - it.lo;
+                    for (let j = 0; j < 4; j++) {
+                        it.p[j][0] += dir[0] * d;
+                        it.p[j][1] += dir[1] * d;
+                    }
+                    edge = it.hi + d;
+                }
+                render();
+                toast("すき間を設定しました");
+            }
+            $("applyGapX").onclick = () => applyGap("x");
+            $("applyGapY").onclick = () => applyGap("y");
+            $("delSel").onclick = () => {
+                if (!sel.length) return;
+                push();
+                ["L", "R"].forEach((t) => {
+                    const idx = sel
+                        .filter((s) => s.t === t)
+                        .map((s) => s.i)
+                        .sort((a, b) => b - a);
+                    idx.forEach((i) => arr(t).splice(i, 1));
+                });
+                sel = [];
+                render();
+            };
+            $("dupSel").onclick = () => {
+                if (!sel.length) return;
+                push();
+                const ns = [];
+                sel.forEach((s) => {
+                    const p = clone(polyOf(s)).map((q) => [q[0] + 14, q[1] + 14]);
+                    arr(s.t).push(p);
+                    ns.push({ t: s.t, i: arr(s.t).length - 1 });
+                });
+                sel = ns;
+                render();
+            };
+
+            /* reorder + renumber */
+            function reorder(t, d) {
+                const s = sel.find((x) => x.t === t);
+                if (!s) return;
+                const a = arr(t),
+                    i = s.i,
+                    j = i + d;
+                if (j < 0 || j >= a.length) return;
+                push();
+                [a[i], a[j]] = [a[j], a[i]];
+                sel = [{ t, i: j }];
+                render();
+            }
+            $("ordLm").onclick = () => reorder("L", -1);
+            $("ordLp").onclick = () => reorder("L", 1);
+            $("ordRm").onclick = () => reorder("R", -1);
+            $("ordRp").onclick = () => reorder("R", 1);
+            function renumber(t) {
+                const a = arr(t);
+                if (a.length < 2) return;
+                push();
+                const p0 = a[0],
+                    u = unit(sub(p0[1], p0[0])),
+                    v = unit(sub(p0[3], p0[0]));
+                const rowH = hOf(p0) * 0.6;
+                const items = a.map((p) => {
+                    const c = cent(p);
+                    return { p, u: c[0] * u[0] + c[1] * u[1], v: c[0] * v[0] + c[1] * v[1] };
+                });
+                const minV = Math.min(...items.map((x) => x.v));
+                items.forEach((x) => (x.row = Math.round((x.v - minV) / Math.max(rowH, 1))));
+                items.sort((x, y) => x.row - y.row || x.u - y.u);
+                const out = items.map((x) => x.p);
+                if (t === "L") L = out;
+                else R = out;
+                sel = [];
+                render();
+                toast("位置順に採番しました");
+            }
+            $("renumL").onclick = () => renumber("L");
+            $("renumR").onclick = () => renumber("R");
+
+            /* ---------- keyboard ---------- */
+            window.addEventListener("keydown", (e) => {
+                if (/input|textarea/i.test(e.target.tagName)) return;
+                const ctrl = e.ctrlKey || e.metaKey;
+                if (ctrl && e.key.toLowerCase() === "z") {
+                    e.shiftKey ? redo() : undo();
+                    e.preventDefault();
+                    return;
+                }
+                if (ctrl && e.key.toLowerCase() === "y") {
+                    redo();
+                    e.preventDefault();
+                    return;
+                }
+                if (ctrl && e.key.toLowerCase() === "a") {
+                    sel = [...L.map((_, i) => ({ t: "L", i })), ...R.map((_, i) => ({ t: "R", i }))];
+                    render();
+                    e.preventDefault();
+                    return;
+                }
+                if (ctrl && e.key.toLowerCase() === "d") {
+                    $("dupSel").click();
+                    e.preventDefault();
+                    return;
+                }
+                const st = e.shiftKey ? 10 : 1;
+                if (e.key === "ArrowLeft") {
+                    moveSel(-st, 0);
+                    e.preventDefault();
+                } else if (e.key === "ArrowRight") {
+                    moveSel(st, 0);
+                    e.preventDefault();
+                } else if (e.key === "ArrowUp") {
+                    moveSel(0, -st);
+                    e.preventDefault();
+                } else if (e.key === "ArrowDown") {
+                    moveSel(0, st);
+                    e.preventDefault();
+                } else if (e.key === "Delete" || e.key === "Backspace") {
+                    if (sel.length) {
+                        $("delSel").click();
+                        e.preventDefault();
+                    }
+                } else if (e.key === "Escape") {
+                    drawing = null;
+                    drawPts = [];
+                    setMode("");
+                    sel = [];
+                    render();
+                }
+            });
+
+            /* ---------- pointer ---------- */
+            function hit(sx, sy) {
+                const ip = toImg(sx, sy),
+                    p = one();
+                if (p) {
+                    const rh = toScreen(rotHandle(p));
+                    if (Math.hypot(rh[0] - sx, rh[1] - sy) < 11) return { k: "rot" };
+                    for (let i = 0; i < 4; i++) {
+                        const s = toScreen(p[i]);
+                        if (Math.hypot(s[0] - sx, s[1] - sy) < 11) return { k: "cor", ci: i };
+                    }
+                }
+                if (baseR)
+                    for (let i = 0; i < 4; i++) {
+                        const s = toScreen(baseR[i]);
+                        if (Math.hypot(s[0] - sx, s[1] - sy) < 10) return { k: "base", w: "R", ci: i };
+                    }
+                if (baseL)
+                    for (let i = 0; i < 4; i++) {
+                        const s = toScreen(baseL[i]);
+                        if (Math.hypot(s[0] - sx, s[1] - sy) < 10) return { k: "base", w: "L", ci: i };
+                    }
+                for (let i = R.length - 1; i >= 0; i--) if (pointIn(ip, R[i])) return { k: "body", t: "R", i };
+                for (let i = L.length - 1; i >= 0; i--) if (pointIn(ip, L[i])) return { k: "body", t: "L", i };
+                return null;
+            }
+            cv.addEventListener("mousedown", (e) => {
+                const sx = e.offsetX,
+                    sy = e.offsetY,
+                    ip = toImg(sx, sy);
+                if (drawing) {
+                    drawPts.push(ip);
+                    const isB = drawing === "baseR" || drawing === "baseL";
+                    const md = drawing === "baseL" ? drawModeL : drawModeR;
+                    const need = isB ? (md === "4pt" ? 4 : 2) : 4;
+                    if (drawPts.length >= need) {
+                        push();
+                        const poly = isB && md !== "4pt" ? squareFrom(drawPts[0], drawPts[1], md) : drawPts.slice(0, 4);
+                        if (drawing === "baseR") baseR = poly;
+                        else if (drawing === "baseL") baseL = poly;
+                        else {
+                            arr(drawing).push(poly);
+                            sel = [{ t: drawing, i: arr(drawing).length - 1 }];
+                            setTab("edit");
+                        }
+                        drawing = null;
+                        drawPts = [];
+                        setMode("");
+                    }
+                    render();
+                    return;
+                }
+                const h = hit(sx, sy);
+                if (!h) {
+                    if (!e.shiftKey) sel = [];
+                    panning = true;
+                    panStart = [sx - view.x, sy - view.y];
+                    render();
+                    return;
+                }
+                // クリック位置が「すでに選択済みの枠」の内側なら、最前面が別枠でも選択を保って移動
+                if (!e.shiftKey && sel.length > 1) {
+                    const onSelected = sel.some((s) => {
+                        const p = polyOf(s);
+                        return p && pointIn(ip, p);
+                    });
+                    if (onSelected) {
+                        push();
+                        drag = { k: "body", last: ip };
+                        render();
+                        return;
+                    }
+                }
+                if (h.k === "body") {
+                    if (e.shiftKey) {
+                        if (isSel(h.t, h.i)) sel = sel.filter((s) => !(s.t === h.t && s.i === h.i));
+                        else sel.push({ t: h.t, i: h.i });
+                    } else if (!isSel(h.t, h.i)) sel = [{ t: h.t, i: h.i }];
+                    push();
+                    drag = { k: "body", last: ip };
+                    if (tab !== "edit") setTab("edit");
+                    render();
+                    return;
+                }
+                if (h.k === "cor") {
+                    push();
+                    drag = { k: "cor", ci: h.ci };
+                    return;
+                }
+                if (h.k === "base") {
+                    push();
+                    drag = { k: "base", w: h.w, ci: h.ci };
+                    return;
+                }
+                if (h.k === "rot") {
+                    const p = one();
+                    push();
+                    drag = { k: "rot", c: cent(p), a0: Math.atan2(ip[1] - cent(p)[1], ip[0] - cent(p)[0]) };
+                    return;
+                }
+            });
+            window.addEventListener("mousemove", (e) => {
+                const r = cv.getBoundingClientRect(),
+                    sx = e.clientX - r.left,
+                    sy = e.clientY - r.top;
+                const inside = !(sx < 0 || sy < 0 || sx > cv.width || sy > cv.height);
+                mouseScr = inside ? [sx, sy] : null;
+                mouseImg = inside ? toImg(sx, sy) : null;
+                if (mouseImg) $("rPix").textContent = `${Math.round(mouseImg[0])}, ${Math.round(mouseImg[1])}`;
+                if (drag) {
+                    const ip = toImg(sx, sy),
+                        p = one();
+                    if (drag.k === "body") {
+                        const d = sub(ip, drag.last);
+                        moveSel(d[0], d[1], true);
+                        drag.last = ip;
+                    } else if (drag.k === "cor" && p) {
+                        p[drag.ci] = ip;
+                        render();
+                    } else if (drag.k === "base") {
+                        const b = drag.w === "R" ? baseR : baseL;
+                        if (b) {
+                            b[drag.ci] = ip;
+                            render();
+                        }
+                    } else if (drag.k === "rot" && p) {
+                        const a = Math.atan2(ip[1] - drag.c[1], ip[0] - drag.c[0]),
+                            d = a - drag.a0,
+                            cs = Math.cos(d),
+                            sn = Math.sin(d);
+                        for (let i = 0; i < 4; i++) {
+                            const dx = p[i][0] - drag.c[0],
+                                dy = p[i][1] - drag.c[1];
+                            p[i] = [drag.c[0] + dx * cs - dy * sn, drag.c[1] + dx * sn + dy * cs];
+                        }
+                        drag.a0 = a;
+                        render();
+                    }
+                    return;
+                }
+                if (panning) {
+                    view.x = sx - panStart[0];
+                    view.y = sy - panStart[1];
+                    render();
+                    return;
+                }
+                cv.style.cursor = drawing ? "crosshair" : inside && hit(sx, sy) ? "move" : "default";
+                if (inside) render();
+            });
+            window.addEventListener("mouseup", () => {
+                drag = null;
+                panning = false;
+            });
+            cv.addEventListener(
+                "wheel",
+                (e) => {
+                    e.preventDefault();
+                },
+                { passive: false },
+            );
+
+            /* ---------- draw / generate ---------- */
+            function setMode(t) {
+                const c = $("modechip");
+                if (t) {
+                    $("modeText").textContent = t;
+                    c.style.display = "flex";
+                } else c.style.display = "none";
+            }
+            document.querySelectorAll("#drawModesR button").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        document.querySelectorAll("#drawModesR button").forEach((x) => x.classList.remove("on"));
+                        b.classList.add("on");
+                        drawModeR = b.dataset.mode;
+                    }),
+            );
+            document.querySelectorAll("#drawModesL button").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        document.querySelectorAll("#drawModesL button").forEach((x) => x.classList.remove("on"));
+                        b.classList.add("on");
+                        drawModeL = b.dataset.mode;
+                    }),
+            );
+            const mtxt = (m, l) => (m === "4pt" ? l + ": 四隅を 左上→右上→右下→左下" : m === "topedge" ? l + ": 上辺 左上→右上" : l + ": 左辺 左上→左下");
+            $("startDrawR").onclick = () => {
+                drawing = "baseR";
+                drawPts = [];
+                setMode(mtxt(drawModeR, "ROBOT基準タイル"));
+                render();
+            };
+            $("startDrawL").onclick = () => {
+                drawing = "baseL";
+                drawPts = [];
+                setMode(mtxt(drawModeL, "LiDAR基準タイル"));
+                render();
+            };
+            $("addL").onclick = () => {
+                drawing = "L";
+                drawPts = [];
+                setMode("LiDAR枠: 四隅を 左上→右上→右下→左下");
+                render();
+            };
+            $("addR").onclick = () => {
+                drawing = "R";
+                drawPts = [];
+                setMode("ROBOT枠: 四隅を 左上→右上→右下→左下");
+                render();
+            };
+            $("copyFromR").onclick = () => {
+                if (!baseR) {
+                    toast("先にROBOT基準タイルを描いてください");
+                    return;
+                }
+                push();
+                baseL = clone(baseR);
+                render();
+                toast("ROBOT基準を複製しました");
+            };
+            document.querySelectorAll("#dirSeg button").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        document.querySelectorAll("#dirSeg button").forEach((x) => x.classList.remove("on"));
+                        b.classList.add("on");
+                    }),
+            );
+            document.querySelectorAll(".stepper button[data-t]").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        const inp = $(b.dataset.t),
+                            d = +b.dataset.d;
+                        let v = (+inp.value || 0) + d;
+                        const mn = inp.min !== "" ? +inp.min : -Infinity;
+                        if (v < mn) v = mn;
+                        inp.value = v;
+                        render();
+                    }),
+            );
+            ["lnx", "lny", "rnx", "rny"].forEach((id) => $(id).addEventListener("input", render));
+
+            function tile(b, nx, ny, gx, gy, off) {
+                const u = sub(b[1], b[0]),
+                    v = sub(b[3], b[0]);
+                const uS = mul(unit(u), norm(u) + gx),
+                    vS = mul(unit(v), norm(v) + gy);
+                const out = [];
+                for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) out.push(b.map((p) => add(add(p, off || [0, 0]), add(mul(uS, ix), mul(vS, iy)))));
+                return out;
+            }
+            $("genRBtn").onclick = () => {
+                if (!baseR) {
+                    toast("先にROBOT基準タイルを描いてください");
+                    return;
+                }
+                push();
+                R = tile(baseR, +$("rnx").value, +$("rny").value, +$("rgapx").value, +$("rgapy").value);
+                sel = [];
+                render();
+                toast(`ROBOT ${R.length}枚を生成`);
+            };
+            $("genLBtn").onclick = () => {
+                const nx = +$("lnx").value,
+                    ny = +$("lny").value,
+                    gx = +$("gapx").value,
+                    gy = +$("gapy").value;
+                push();
+                if (baseL) {
+                    L = tile(baseL, nx, ny, gx, gy);
+                } else {
+                    if (!baseR) {
+                        toast("基準タイルを描いてください");
+                        return;
+                    }
+                    const dir = document.querySelector("#dirSeg .on").dataset.dir;
+                    const rgx = +$("rgx").value,
+                        rgy = +$("rgy").value;
+                    const u = sub(baseR[1], baseR[0]),
+                        v = sub(baseR[3], baseR[0]);
+                    const uL = norm(u),
+                        vL = norm(v),
+                        uU = unit(u),
+                        vU = unit(v);
+                    const lw = nx * uL + (nx - 1) * gx,
+                        lh = ny * vL + (ny - 1) * gy;
+                    const rnx = +$("rnx").value,
+                        rny = +$("rny").value;
+                    const rw = rnx * uL + (rnx - 1) * +$("rgapx").value,
+                        rh = rny * vL + (rny - 1) * +$("rgapy").value;
+                    let o;
+                    if (dir === "right") o = add(mul(uU, -(lw + rgy)), mul(vU, -rgx));
+                    else if (dir === "left") o = add(mul(uU, rw + rgy), mul(vU, -rgx));
+                    else if (dir === "bottom") o = add(mul(uU, -rgx), mul(vU, -(lh + rgy)));
+                    else o = add(mul(uU, -rgx), mul(vU, rh + rgy));
+                    L = tile(baseR, nx, ny, gx, gy, o);
+                }
+                sel = [];
+                render();
+                toast(`LiDAR ${L.length}枚を生成`);
+            };
+
+            /* ---------- files ---------- */
+            function setMapImage(im) {
+                img = im;
+                imgW = im.naturalWidth;
+                imgH = im.naturalHeight;
+                $("empty").style.display = "none";
+                $("loading").style.display = "none";
+                $("readout").style.display = "block";
+                $("legend").style.display = "flex";
+                fit();
+            }
+            $("mapFile").addEventListener("change", (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                const im = new Image();
+                im.onload = () => setMapImage(im);
+                im.src = URL.createObjectURL(f);
+            });
+
+            // ---------- マップ画像をAPIから取得 ----------
+            let apiLoading = false;
+            function showLoading(on, text) {
+                $("loading").style.display = on ? "flex" : "none";
+                if (on) {
+                    $("empty").style.display = "none";
+                    if (text) $("loadingText").textContent = text;
+                }
+            }
+            $("apiMapBtn").onclick = loadMapFromAPI;
+            async function loadMapFromAPI() {
+                if (apiLoading) return;
+                apiLoading = true;
+                const btn = $("apiMapBtn"),
+                    label = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "取得中…";
+                showLoading(true, "マップを取得しています…");
+                try {
+                    const res = await fetch("/api/robot_map");
+                    const data = await res.json();
+                    if (!res.ok || !data.ok) throw new Error(data.error || "HTTP " + res.status);
+                    await loadMapImageURL(data.map.image);
+                    toast("マップを取得しました");
+                } catch (err) {
+                    console.error("マップ読み込みエラー:", err);
+                    toast("マップの取得に失敗しました");
+                    // 失敗時はアップロード案内に戻す（マップ未取得の場合のみ）
+                    if (!img) $("empty").style.display = "flex";
+                } finally {
+                    showLoading(false);
+                    apiLoading = false;
+                    btn.disabled = false;
+                    btn.textContent = label;
+                }
+            }
+            function loadMapImageURL(url) {
+                return new Promise((resolve, reject) => {
+                    const im = new Image();
+                    // crossOrigin は付けない（表示のみでピクセル読み戻しをしないため）
+                    im.onload = () => {
+                        setMapImage(im);
+                        resolve();
+                    };
+                    im.onerror = () => reject(new Error("画像の読み込みに失敗"));
+                    im.src = url;
+                });
+            }
+            // ---------- ロボットの現在地を更新 ----------
+            let poseLoading = false;
+            function updatePoseChip() {
+                const el = $("posechip");
+                if (!robotPose) {
+                    el.style.display = "none";
+                    return;
+                }
+                el.style.display = "block";
+                el.innerHTML = `現在地 <b>X ${Math.round(robotPose.x)}</b> <b>Y ${Math.round(robotPose.y)}</b> <b>θ ${(+robotPose.angle || 0).toFixed(1)}°</b>`;
+            }
+            async function updateRobotPose() {
+                if (poseLoading) return;
+                poseLoading = true;
+                const btn = $("poseBtn"),
+                    label = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "更新中…";
+                try {
+                    const res = await fetch("/api/robot_pose");
+                    const data = await res.json();
+                    if (!res.ok || !data.ok) throw new Error(data.error || "HTTP " + res.status);
+                    robotPose = data.pose;
+                    updatePoseChip();
+                    render();
+                    toast("現在地を更新しました");
+                } catch (err) {
+                    console.error("現在地の取得エラー:", err);
+                    toast("現在地の取得に失敗しました");
+                } finally {
+                    poseLoading = false;
+                    btn.disabled = false;
+                    btn.textContent = label;
+                }
+            }
+            $("poseBtn").onclick = updateRobotPose;
+
+            // ---------- 登録ルート一覧 ----------
+            let routeLoading = false;
+            function renderRouteList() {
+                $("routeTag").textContent = routes.length;
+                $("tabRouteCnt").textContent = routes.length;
+                const el = $("routeList");
+                el.innerHTML = "";
+                if (!routes.length) {
+                    const s = document.createElement("span");
+                    s.className = "note";
+                    s.textContent = "ルートがありません";
+                    el.appendChild(s);
+                    return;
+                }
+                routes.forEach((r) => {
+                    const row = document.createElement("label");
+                    row.className = "routeitem";
+                    row.innerHTML = `<input type="checkbox" ${routeVisible[r.name] ? "checked" : ""}><span class="sw"></span><span class="nm">${r.name}</span>`;
+                    row.querySelector("input").onchange = (e) => {
+                        routeVisible[r.name] = e.target.checked;
+                        render();
+                    };
+                    el.appendChild(row);
+                });
+            }
+            async function loadRouteList() {
+                if (routeLoading) return;
+                routeLoading = true;
+                const btn = $("refreshRoutes"),
+                    label = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "更新中…";
+                try {
+                    const res = await fetch("/api/route_list");
+                    const data = await res.json();
+                    if (!res.ok || !data.ok) throw new Error(data.error || "HTTP " + res.status);
+                    routes = data.routes || [];
+                    renderRouteList();
+                    render();
+                    toast("ルート一覧を更新しました");
+                } catch (err) {
+                    console.error("ルート一覧の取得エラー:", err);
+                    toast("ルート一覧の取得に失敗しました");
+                } finally {
+                    routeLoading = false;
+                    btn.disabled = false;
+                    btn.textContent = label;
+                }
+            }
+            $("refreshRoutes").onclick = loadRouteList;
+
+            $("fitBtn").onclick = fit;
+            function zoomAt(f) {
+                const cx = cv.width / 2,
+                    cy = cv.height / 2,
+                    b = toImg(cx, cy);
+                view.scale = Math.max(0.04, Math.min(80, view.scale * f));
+                const a = toImg(cx, cy);
+                view.x += (a[0] - b[0]) * view.scale;
+                view.y += (a[1] - b[1]) * view.scale;
+                render();
+            }
+            $("zoomIn").onclick = () => zoomAt(1.2);
+            $("zoomOut").onclick = () => zoomAt(1 / 1.2);
+
+            $("cfgFile").addEventListener("change", (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                const rd = new FileReader();
+                rd.onload = () => {
+                    try {
+                        importCfg(rd.result);
+                    } catch (err) {
+                        toast("読み込めませんでした");
+                        console.error(err);
+                    }
+                };
+                rd.readAsText(f);
+            });
+            function setDir(d) {
+                document.querySelectorAll("#dirSeg button").forEach((x) => x.classList.toggle("on", x.dataset.dir === d));
+            }
+            function importCfg(text) {
+                let cfg = null;
+                try {
+                    cfg = JSON.parse(text);
+                } catch (_) {}
+                push();
+                if (cfg && cfg.lidar_areas) {
+                    const unwrap = (a) =>
+                        a.map((e) => {
+                            const pts = Array.isArray(e) ? e : e.points;
+                            return pts.map((p) => [+p[0], +p[1]]);
+                        });
+                    L = unwrap(cfg.lidar_areas);
+                    R = unwrap(cfg.robot_areas || []);
+                    if (cfg.robot_direction) setDir(cfg.robot_direction);
+                    if (cfg.lidar_num_x) $("lnx").value = cfg.lidar_num_x;
+                    if (cfg.lidar_num_y) $("lny").value = cfg.lidar_num_y;
+                } else {
+                    const grab = (name) => {
+                        const i = text.indexOf(name + ":");
+                        if (i < 0) return [];
+                        let rest = text.slice(i + name.length + 1);
+                        const nx = rest.search(/\n[a-zA-Z_]+\s*:/);
+                        if (nx >= 0) rest = rest.slice(0, nx);
+                        const out = [],
+                            re = /\[\s*\[([^\]]*)\]\s*,\s*\[([^\]]*)\]\s*,\s*\[([^\]]*)\]\s*,\s*\[([^\]]*)\]\s*\]/g;
+                        let m;
+                        while ((m = re.exec(rest)) !== null) {
+                            const pts = [1, 2, 3, 4].map((k) => m[k].split(",").map((s) => parseFloat(s.trim())));
+                            if (pts.every((p) => p.length === 2 && p.every((n) => !isNaN(n)))) out.push(pts);
+                        }
+                        return out;
+                    };
+                    const la = grab("lidar_areas"),
+                        ra = grab("robot_areas");
+                    if (!la.length && !ra.length) throw new Error("no areas");
+                    L = la;
+                    R = ra;
+                    const d = text.match(/robot_direction\s*:\s*"?(\w+)"?/);
+                    if (d) setDir(d[1]);
+                    const nx = text.match(/lidar_num_x\s*:\s*(\d+)/);
+                    if (nx) $("lnx").value = nx[1];
+                    const ny = text.match(/lidar_num_y\s*:\s*(\d+)/);
+                    if (ny) $("lny").value = ny[1];
+                }
+                sel = [];
+                setTab("list");
+                render();
+                toast(`読み込み: LiDAR ${L.length}枚 / ROBOT ${R.length}枚`);
+            }
+
+            /* ---------- export ---------- */
+            const rnd = (p) => p.map((q) => [Math.round(q[0]), Math.round(q[1])]);
+            const fmt = (p) => `[[${p[0][0]}, ${p[0][1]}], [${p[1][0]}, ${p[1][1]}], [${p[2][0]}, ${p[2][1]}], [${p[3][0]}, ${p[3][1]}]]`;
+            function buildEx(kind) {
+                if (!L.length && !R.length) return "（枠がまだありません）";
+                const la = L.map(rnd),
+                    ra = R.map(rnd);
+                if (kind === "json")
+                    return JSON.stringify(
+                        {
+                            lidar_areas: la.map((p, i) => ({ id: i + 1, points: p })),
+                            robot_areas: ra.map((p, i) => ({ id: i + 1, points: p })),
+                        },
+                        null,
+                        2,
+                    );
+                let s = `# polygon frame config — Frame Designer\n# 各エリアは id と points を持つ（同じ id 同士が紐付く）\n# points は 4点 [左上, 右上, 右下, 左下]（マップ画像のピクセル、左上が 0,0）\n\n`;
+                s += `lidar_areas:\n`;
+                la.forEach((p, i) => {
+                    s += `  - id: ${i + 1}\n    points: ${fmt(p)}\n`;
+                });
+                s += `\nrobot_areas:\n`;
+                ra.forEach((p, i) => {
+                    s += `  - id: ${i + 1}\n    points: ${fmt(p)}\n`;
+                });
+                return s.trimEnd();
+            }
+            let exKind = "yaml";
+            function refreshEx() {
+                $("exOut").textContent = buildEx(exKind);
+                const need = +$("lnx").value * +$("lny").value;
+                $("exWarn").innerHTML =
+                    L.length && need && L.length !== need
+                        ? `<div class="warn bad" style="margin:0 0 12px"><span>⚠</span><span>LiDAR枚数 ${L.length} が num_x×num_y = ${need} と一致しません。このままでもノードは動きますが警告が出ます。</span></div>`
+                        : "";
+            }
+            $("exportBtn").onclick = () => {
+                $("scrim").classList.add("show");
+                $("drawer").classList.add("show");
+                refreshEx();
+            };
+            const closeD = () => {
+                $("scrim").classList.remove("show");
+                $("drawer").classList.remove("show");
+            };
+            $("closeDrawer").onclick = closeD;
+            $("scrim").onclick = closeD;
+            document.querySelectorAll("#exTabs button").forEach(
+                (b) =>
+                    (b.onclick = () => {
+                        document.querySelectorAll("#exTabs button").forEach((x) => x.classList.remove("on"));
+                        b.classList.add("on");
+                        exKind = b.dataset.t;
+                        refreshEx();
+                    }),
+            );
+            $("copyOut").onclick = () => navigator.clipboard.writeText($("exOut").textContent).then(() => toast("コピーしました"));
+            $("dlOut").onclick = () => {
+                const blob = new Blob([$("exOut").textContent], { type: "text/plain" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = exKind === "json" ? "frame_config.json" : "frame_config.yaml";
+                a.click();
+                toast("保存しました");
+            };
+            function toast(m) {
+                const t = $("toast");
+                t.textContent = m;
+                t.classList.add("show");
+                setTimeout(() => t.classList.remove("show"), 1600);
+            }
+
+            resize();
+
+            // 起動時にAPIからマップ・現在地・ルート一覧を自動取得
+            loadMapFromAPI();
+            updateRobotPose();
+            loadRouteList();
+        </script>
+    </body>
+</html>

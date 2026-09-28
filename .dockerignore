@@ -1,0 +1,6 @@
+.env
+auth_config.json
+__pycache__/
+.claude/
+.git/
+configs/*
