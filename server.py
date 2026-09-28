@@ -12,7 +12,7 @@ Python 側でやりたいことが決まったら、下の「拡張ポイント�
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, Response, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request, send_from_directory
 
 from app_client import main_api_client, get_route_list
 
@@ -25,21 +25,6 @@ os.makedirs(CONFIG_DIR, exist_ok=True)
 ROBOT_ID = os.getenv("ROBOT_ID")
 
 app = Flask(__name__)
-
-# BASIC_AUTH_USER / BASIC_AUTH_PASSWORD が設定されている時だけBasic認証をかける
-# （Render等で公開する時用。ローカルでは未設定のままでOK）
-BASIC_AUTH_USER = os.getenv("BASIC_AUTH_USER")
-BASIC_AUTH_PASSWORD = os.getenv("BASIC_AUTH_PASSWORD")
-
-
-@app.before_request
-def require_basic_auth():
-    if not (BASIC_AUTH_USER and BASIC_AUTH_PASSWORD):
-        return None
-    auth = request.authorization
-    if auth and auth.username == BASIC_AUTH_USER and auth.password == BASIC_AUTH_PASSWORD:
-        return None
-    return Response("Authentication required", 401, {"WWW-Authenticate": 'Basic realm="Frame Designer"'})
 
 
 # ====================== 画面 ======================
